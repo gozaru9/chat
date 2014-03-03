@@ -2,10 +2,10 @@ var log4js = require('log4js');
 log4js.configure(require('../config/log4js_setting.json'));
 /* アクセスログとか**/
 var reqLogger = log4js.getLogger('request');
-reqLogger.setLevel('DEBUG');
+reqLogger.setLevel('ERROR'); //ログレベルはここで変更
 /* アプリケーションログ**/
 var appLogger = log4js.getLogger('application');
-appLogger.setLevel('DEBUG');
+appLogger.setLevel('ERROR'); //ログレベルはここで変更
 
 exports.requestDebug = function(mesage){
     reqLogger.debug(mesage);
