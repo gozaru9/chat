@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/javascripts/client.js"></script>
+        <script type="text/javascript" src="/view-script/lobby.js"></script>
+    </head>
+    <body>
+    <div id="wrap">
+        <%- include ../header.ejs %>
+        <div id="individualMessageInfo"></div>
+        <div class="chat-container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="page-header">
+                    <h1>Lobby</h1>
+                </div>
+                <div id="myLoomLst" >
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading"><a href="#" id="myRoom">MY ROOM</a>
+                            <span name="myRoom" class="badge pull-right">0</span>
+                        </div>
+                        <div class="panel-body">
+                            <em>TOできたメッセージを見るためのルームです</em>
+                            </br><hr>
+                            <div class="user-area"><span class="user-name"><%= userName %></span></div>&nbsp;
+                        </div>
+                    </div>
+                </div>
+                <% rooms.forEach(function(room){ %>
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading"><a href="#" id=<%= room._id %>><%= room.name %></a>
+                            <span name="<%= room._id %>" class="badge pull-right"><%= room.unReadNum %></span>
+                        </div>
+                        <div class="panel-body">
+                            <em><%= room.description %></em>
+                            </br><hr>
+                            <% room.users.forEach(function(user){ %>
+                                <div class="user-area"><span class="user-name"><%= user.name %></span></div>&nbsp;
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include ../chat/individualMessage.ejs %>
+    <%- include ../chat/multipleMessag.ejs %>
+    <%- include ../chat/allSendMessage.ejs %>
+    <%- include ../chat/sendMessage.ejs %>
+    <%- include ../chat/createRoom.ejs %>
+    <%- include ../chat/profile.ejs %>
+    <%- include ../chat/setting.ejs %>
+    <%- include ../sideMenuLobby.ejs %>
+    </body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/javascripts/plugins/spectrum/spectrum.js"></script>
+        <link rel='stylesheet' href="/javascripts/plugins/spectrum/spectrum.css" rel="stylesheet">
+        <script type="text/javascript" src="/view-script/tags.js"></script>
+    </head>
+    <body>
+    <div id="wrap">
+        <%- include ../header.ejs %>
+        <%- include tagsCreate.ejs %>
+        
+        <div class="chat-container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="page-header pull-right ">
+                        <button data-toggle="modal" data-target="#tagsCreateForm" type="button" id="tagsCreateButton" class="btn btn-info">create new</button>
+                    </div>
+                    <h2 class="page-header">tags</h2><em>全<%= total %>件</em>
+                    
+                    <% if (pager.maxPage > 1) {%>
+                    <ul class="pagination btn-sm">
+                        <li><a href="/tags/?pages=1">&laquo;</a></li>
+                        <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                            <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                                <a href="/tags/?pages=<%= i %>"><%= i %></a></li>
+                        <% } %>
+                        <li><a href="/tags/?pages=<%= pager.maxPage %>">&raquo;</a></li>
+                    </ul>
+                    <% } %>
+                    <table class="table table-hover">
+                        <thead>
+                            <th>name</th>
+                            <th>監視対象</th>
+                            <th>color</th>
+                            <th></th>
+                            <th></th>
+                        </thead>
+                        <tbody>
+                        <% tags.forEach(function(tag){ %>
+                            <tr>
+                                <td><%= tag.name %></td>
+                                <td><% if (tag.isMonitor != 0) { %>○<% } else { %>×<% } %></td>
+                                <td><button type="button" class="btn btn-default" style="background-color:<%= tag.color %>"><%= tag.color %></button></td>
+                                <td><button data-toggle="modal" data-target="#tagsCreateForm" type="button" name="tagsUpdateButton" value="<%= tag._id %>" class="btn btn-warning">update</button></td>
+                                <td><button type="button" name="tagsDeleteButton" value="<%= tag._id %>" class="btn btn-danger">delete</button></td>
+                            </tr>
+                        <% }) %>
+                        </tbody>
+                    </table>
+                    <% if (pager.maxPage > 1) {%>
+                    <ul class="pagination btn-sm">
+                        <li><a href="/tags/?pages=1">&laquo;</a></li>
+                        <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                            <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                                <a href="/tags/?pages=<%= i %>"><%= i %></a></li>
+                        <% } %>
+                        <li><a href="/tags/?pages=<%= pager.maxPage %>">&raquo;</a></li>
+                    </ul>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+    </body>
+</html>
+    

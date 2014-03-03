@@ -1,0 +1,38 @@
+        <input type="hidden" id="cryptoId" value="<%= _id %>">
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="#modal" class="second navbar-brand" style="margin-left:10px"><span class="glyphicon glyphicon-circle-arrow-right"></span></a>
+                <a class="navbar-brand" href="#">Chat</a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul id="hederMenu" class="nav navbar-nav">
+                    <li id="lobbyView" class="active"><a href="/chat/lobby?notice=false">Lobby </a></li>
+                    <!--<li data-toggle="modal" data-target="#allMessageForm"><a href="#">All Message</a></li>-->
+                    <li data-toggle="modal" data-target="#multipleMessageForm"><a id="multipleMessag" href="#">複数部屋へのメッセージ</a></li>
+                    <li data-toggle="modal" data-target="#createRoomForm"><a href="#">Create Room</a></li>
+                    <li id="fixedView" class=""><a href="/chat/fixedSectence">定型文</a></li>
+                    <% if (role == 1) { %>
+                    <li id="accountView" class=""><a href="/account">ユーザー管理</a></li>
+                    <% } %>
+                    <li id="tagsView" class=""><a href="/tags">タグ</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a style="margin-right:15px;" href="#" class="dropdown-toggle" data-toggle="dropdown"><%= userName %><b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li data-toggle="modal" data-target="#profileForm"><a id="profile" href="#">Profile </a></li>
+                            <!--<li data-toggle="modal" data-target="#settingForm"><a href="#">Settings </a></li>-->
+                            <li class="divider"></li>
+                            <li><a id="logout" href="/chat/logout">Log out </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <%- include ./chat/profile.ejs %>

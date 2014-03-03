@@ -1,0 +1,41 @@
+<script type="text/javascript" src="/javascripts/jquery.pageslide.min.js"></script>
+
+<div id="modal" style="display:none">
+<br>
+<br>
+<br>
+    <div id="individual" class="list-group visible-lg visible-md">
+    <% allUsers.forEach(function(user){ %>
+      <a href="#" name=<%= user._id %> class="list-group-item">
+        <li name="<%= user._id %>" class="list-unstyled">
+            <i class="<%= user.status %>"></i><%= user.name %>
+        </li>
+    </a>
+    <% }) %>
+    </div>
+    <div class="visible-xs visible-sm">
+        <div name="roomListSide">
+            <ul id="roomListUlSide" class="nav nav-pills nav-stacked">
+              <li name="myRoom" class="">
+                <a name="roomSelectRadio" href="#">
+                  MY ROOM
+                </a>
+              </li>
+            <% rooms.forEach(function(room){ %>
+              <li name=<%= room._id %> class="">
+                <a name="roomSelectRadio" href="#">
+                  <%= room.name %>
+                  <% if (room.unReadNum != 0) { %>
+                  <span name="<%= room._id %>" class="badge pull-right"><%= room.unReadNum %></span>
+                  <% } %>
+                </a>
+              </li>
+            <% }) %>
+            </ul>                        
+        </div>
+    </div>
+
+</div>
+<script>
+    $(".second").pageslide({ direction: "right", modal: true });
+</script>

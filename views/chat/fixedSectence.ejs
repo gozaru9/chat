@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/view-script/fixed.js"></script>
+        
+    </head>
+    <body>
+    <div id="wrap">
+        <%- include ../header.ejs %>
+        <div class="chat-container">
+        <%- include fixedSectenceCreate.ejs %>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="page-header pull-right">
+                        <button data-toggle="modal" data-target="#fixedCreateForm" type="button" id="fixedCreateButton" class="btn btn-info">create new</button>                        
+                    </div>
+                    <h2 class="page-header">定型文</h2>
+                    <h2 class="page-header">my fixed sentence</h2>
+                    <table class="table table-hover">
+                        <thead>
+                            <th>title</th>
+                            <th>contents</th>
+                            <th></th>
+                            <th></th>
+                        </thead>
+                        <tbody>
+                        <% mineFixed.forEach(function(myFixed){ %>
+                            <tr>
+                                <td><%= myFixed.title %></td>
+                                <td><%= myFixed.contents %></td>
+                                <td><button data-toggle="modal" data-target="#fixedCreateForm" type="button" name="myFixedUpdateButton" value="<%= myFixed._id %>" class="btn btn-warning">update</button></td>
+                                <td><button type="button" name="myFixedDeleteButton" value="<%= myFixed._id %>" class="btn btn-danger">delete</button></td>
+                            </tr>
+                        <% }) %>
+                        </tbody>
+                    </table>
+        
+                    <h2 class="page-header">open sentence</h2>
+                    <table class="table table-hover">
+                        <thead>
+                            <th>title</th>
+                            <th>contents</th>
+                            <th>createby</th>
+                            <th>created</th>
+                            <th>updateby</th>
+                            <th>updated</th>
+                            <th></th>
+                            <th></th>
+                        </thead>
+                        <tbody>
+                        <% openFixed.forEach(function(content){ %>
+                            <tr>
+                                <td><%= content.title %></td>
+                                <td><%= content.contents %></td>
+                                <td><%= content.created %></td>
+                                <td><%= content.createBy %></td>
+                                <td><%= content.updateBy %></td>
+                                <td><%= content.updated %></td>
+                                <td><button data-toggle="modal" data-target="#fixedCreateForm" type="button" name="myFixedUpdateButton" value="<%= content._id %>" class="btn btn-warning">update</button></td>
+                                <td><button type="button" name="myFixedDeleteButton" value="<%= content._id %>" class="btn btn-danger">delete</button></td>
+                            </tr>
+                        <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </body>
+</html>
+    

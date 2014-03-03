@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/javascripts/client.js"></script>
+        <script type="text/javascript" src="/view-script/chat.js"></script>
+
+        <script>
+        $(function() {
+            var target = "<%= targetRoomId %>";
+            if (target !== 'undefined'){
+                var socket = io.connect(location.hostname);
+                $('#sendButton').val(target);
+
+                <% rooms.forEach(function(room){ %>
+                    joinRoom("<%= room._id %>");
+                <% }) %>
+
+                if ($('#'+target).length === 0) {
+                
+                    $('#roomName').html("<%= roomName %>");
+                    window.document.title = $('#roomName').text();
+                    $('#memberEditButton').val(target);
+                    $('#roomContents').find(".active").hide(0).removeClass("active");
+                    var element = $("<div>", { class: "panel-body active", id: target, name: "messageArea"});
+                    $('#roomContents').append(element).show(0);
+                    $('#roomList').find(".active").removeClass("active");
+                    $('input[value='+target+']:radio').parent('label').addClass('active');
+                    $('li[name='+target+']').addClass('active');
+                    $.ajax({
+                        type: 'POST',
+                        url: '/chat/getUserByRoomId',
+                        dataType: 'json',
+                        data: ({roomId:target}),
+                        cache: false,
+                        success: function(data) {
+                            
+                            $('#roomUserList').children().remove();
+                            var length = data.users.length;
+                            var toElement = '';
+                            for (var i = 0; i < length; i++) {
+                                $('#roomUserList').append($("<li>",{name: data.users[i]._id}).append(
+                                    $("<i>",{class: data.users[i].status})).append(data.users[i].name));
+                                toElement += '<li><a name="toTarget" href='+data.users[i]._id+'>'+data.users[i].name+'</a></li>';
+                            }
+                            document.getElementById("toUl").innerHTML = toElement;
+                            var msgLength = data.messages.length;
+                            data.messages.forEach(function(message){
+                                createMessageElement(target, message);
+                            });
+                            $('#roomInfomation').html(data.description);
+                            $('#'+target).animate({ scrollTop: getScrolBottom($('#'+target))}, 'slow');
+                            resizeArea();
+                    　　},
+                    　　error: function(XMLHttpRequest, textStatus, errorThrown) {
+                            $().toastmessage('showToast', {
+                                text     : 'データの取得に失敗しました',
+                                sticky   : true,
+                                type     : 'error'
+                            });
+                            console.log(XMLHttpRequest);
+                            console.log(textStatus);
+                    　　},
+                    });
+                    return;
+                }
+            }
+        });
+        </script>
+    </head>
+    <body onblur="tabMove();" onfocus="tabReturn();">
+    <input type="hidden" id="isActive">
+    <div id="wrap">
+        <%- include ../header.ejs %>
+        <div id="individualMessageInfo"></div>
+        <div id="main" class="chat-container">
+            <div class="row">
+                <div id="all"></div>
+                <div class="col-md-9">
+                    <div class="page-header">
+                        <h3 id="roomName"></h3>
+                    </div>
+                    <div id="chatMainDiv" class="chat-panel panel panel-default">
+                        <div class="panel-heading">
+                            <i class="fa fa-comments fa-fw"></i>
+                            本日(<span id="today"></span>) <a id="beforedayStatus1" name="beforeday" href="#">1日前</a> <a id="beforedayStatus2" name="beforeday" href="#">7日前</a> <a id="beforedayStatus3" name="beforeday" href="#">60日前</a> <a id="beforedayStatus4" name="beforeday" href="#">3ヶ月前</a>
+                            <div class="btn-group pull-right">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                    <i class="fa fa-chevron-down"></i>
+                                </button>
+                                <ul class="dropdown-menu slidedown">
+                                    <li><a href="#" id="status1" name="statusChange"><i class="fa fa-check-circle fa-fw"></i> Available</a></li>
+                                    <li><a href="#" id="status2" name="statusChange"><i class="fa fa-times fa-fw"></i> Busy</a></li>
+                                    <li><a href="#" id="status3" name="statusChange"><i class="fa fa-clock-o fa-fw"></i> Away</a></li>
+                                    <li><a href="#" id="status4" name="statusChange"><i class="fa fa-sign-out fa-fw"></i> Return home</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="roomContents">
+                            <div id="contentsAll" class="panel-body active"></div>
+                        </div>
+                        <div id="messageFooter" class="panel-footer">
+                            <div id="sendMenu" class="row col-md-12">
+                                <div id="fixedSectencesDiv" class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">定型文 <span class="caret"></span></button>
+                                    <ul class="dropdown-menu">
+                                    <% fixed.forEach(function(contents){ %>
+                                        <li><a name="fixedSectences" href="#<%= contents._id %>"><%= contents.title %></a></li>
+                                        <input type="hidden" id="<%= contents._id %>" value="<%= contents.contents %>">
+                                    <% }) %>
+                                    </ul>
+                                </div>
+                                <div id="tagDiv" class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">タグ <span class="caret"></span></button>
+                                    <ul id="tagUl" class="dropdown-menu">
+                                    <% tags.forEach(function(tag){ %>
+                                        <li><a name="tags" href="<%= tag._id %>"><%= tag.name %></a></li>
+                                        <input type="hidden" id="<%= tag._id %>" value="<%= tag.color %>">
+                                    <% }) %>
+                                    </ul>
+                                </div>
+                                <div id="toDiv" class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">TO <span class="caret"></span></button>
+                                    <ul id="toUl" class="dropdown-menu"></ul>
+                                </div>
+                            </div> 
+                            <div class="row">
+                                <div id="selectTag" class="col-md-12">
+                                </div>
+                                <div id="toUser" class="col-md-12">
+                                </div>
+                            </div>
+
+                            <div class="send-message-box">
+                                <p>
+                                    <div class="input-area">
+                                        <textarea id="message" class="form-control" rows="3" placeholder="メッセージを入力してください"></textarea>
+                                    </div>
+                                </p>
+                                <button type="button" id="sendButton" class="btn btn-success btn-lg">Send Message</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 hidden-xs">
+                    <div class="page-header">
+                        <h4>Room Information</h4>
+                        <span id="roomInfomation"></span>
+                    </div>
+
+                    <div class="page-header">
+                        <h4>Whor's here</h4>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <ul id="roomUserList" class="list-unstyled">
+                            </ul>
+                        </div>
+                        <div class="panel-footer">
+                        <a data-toggle="modal" href="#memberEditForm" class="btn btn-success" id="memberEditButton">メンバー編集</a>
+                        </div>
+                    </div>
+
+                    <div class="page-header">
+                        <h4>Incident Message</h4>
+                    </div>
+                    <div name="incidentList">
+                        <ul class="nav nav-pills nav-stacked">
+                            <li><a href="/incidnt/?status=0">all<span id="incAll" class="badge pull-right"><%= incidnt.allCount %></span></a></li>
+                            <li><a href="/incidnt/?status=1">open<span id="incOpen" class="badge pull-right"><%= incidnt.openCount %></span></a></li>
+                            <li><a href="/incidnt/?status=2">in progress<span id="incProg" class="badge pull-right"><%= incidnt.progCount %></span></a></li>
+                            <li><a href="/incidnt/?status=3">close<span id="incClose" class="badge pull-right"><%= incidnt.closeCount %></span></a></li>
+                            <li><a href="/incidnt/?status=9">remove<span id="incRemove" class="badge pull-right"><%= incidnt.removeCount %></span></a></li>
+                        </ul>
+                    </div>
+                    <div class="page-header">
+                        <h4>Other Room Information</h4>
+                    </div>
+                    <div name="roomList">
+                        <ul id="roomListUl" class="nav nav-pills nav-stacked">
+                          <li name="myRoom">
+                            <a name="roomSelectRadio" href="#">
+                              MY ROOM
+                            </a>
+                          </li>
+                        <% rooms.forEach(function(room){ %>
+                          <li name=<%= room._id %> class="">
+                            <a name="roomSelectRadio" href="#">
+                              <%= room.name %>
+                              <% if (room.unReadNum != 0) { %>
+                              <span name="<%= room._id %>" class="badge pull-right"><%= room.unReadNum %></span>
+                              <% } %>
+                            </a>
+                          </li>
+                        <% }) %>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    <%- include ../chat/individualMessage.ejs %>
+    <%- include ../chat/multipleMessag.ejs %>
+    <%- include ../chat/allSendMessage.ejs %>
+    <%- include ../chat/createRoom.ejs %>
+    <%- include ../chat/setting.ejs %>
+    <%- include ../chat/memberEdit.ejs %>
+    <%- include ../sideMenu.ejs %>
+    </div>
+    </body>
+</html>

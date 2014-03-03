@@ -1,0 +1,19 @@
+<script type="text/javascript" src="/javascripts/jquery.pageslide.min.js"></script>
+
+<div id="modal" style="display:none">
+<br>
+<br>
+<br>
+    <div id="individual" class="list-group">
+    <% allUsers.forEach(function(user){ %>
+      <a href="#" name=<%= user._id %> class="list-group-item">
+        <li name="<%= user._id %>" class="list-unstyled">
+            <i class="<%= user.status %>"></i><%= user.name %>
+        </li>
+    </a>
+    <% }) %>
+    </div>
+</div>
+<script>
+    $(".second").pageslide({ direction: "right", modal: true });
+</script>

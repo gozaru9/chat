@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/javascripts/submit.js"></script>
+        <script type="text/javascript" src="/view-script/account.js"></script>
+        <script>
+        $(function() {
+            
+            loadMessage("<%= items.message %>");
+        });
+        </script>
+    </head>
+    <body>
+        <%- include ../header.ejs %>
+        <div class="chat-container">
+            <div id="loading"></div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="page-header pull-right">
+                        <button id="accountCreateButton" class="btn btn-info" data-toggle="modal" data-target="#createForm">create new</button>
+                    </div>
+                    <h2 class="page-header">ユーザー管理</h2>
+
+                    <div class="clearfix"></div>
+
+                    <div class="panel-group" id="accordion">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">CSVでユーザーを取り込む</a>
+                                </h4>
+                            </div>
+                            <div id="collapseOne" class="panel-collapse collapse">
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div id="drop" style="height:100px; padding:10px; border:1px dashed" ondragover="onDragOver(event)" ondrop="onDrop(event)"  >ここにファイルをドロップ</div>
+                                        </div>
+                                        <div class="col-md-9">
+                                        <p>ファイルプロパティ</p>
+                                        <div id="disp" ></div>
+                                        <button id="fileUpload" class="btn btn-success">アップロードする</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="readFileInfomation">
+                    <!-- /entry-dialog -->
+                    <%- include create.ejs %>
+                    <% if (pager.maxPage > 1) {%>
+                    <ul class="pagination btn-sm">
+                        <li><a href="/account/?pages=1">&laquo;</a></li>
+                        <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                            <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                                <a href="/account/?pages=<%= i %>"><%= i %></a></li>
+                        <% } %>
+                        <li><a href="/account/?pages=<%= pager.maxPage %>">&raquo;</a></li>
+                    </ul>
+                    <% } %>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr class="active">
+                                    <th>ユーザー名</th>
+                                    <th>メールアドレス</th>
+                                    <th>ロール</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <% items.users.forEach(function(item){ %>
+                                <tr>
+                                    <td><%= item.name %></td>
+                                    <td><%= item.mailAddress %></td>
+                                    <td>
+                                        <% if (item.role == 0) { %>
+                                            一般ユーザー
+                                        <% }else{ %>
+                                            管理ユーザー
+                                        <% } %>
+                                    </td>
+                                    <td><button name="accountUpdateButton" data-toggle="modal" data-target="#createForm" value="<%= item._id %>" class="btn btn-warning">update</button></td>
+                                    <td><button type="button" name="accountDeleteButton" value="<%= item._id %>" class="btn btn-danger">delete</button></td>
+                                </tr>
+                            <% }) %>
+                            </tbody>
+                        </table>
+                        <% if (pager.maxPage > 1) {%>
+                        <ul class="pagination btn-sm">
+                            <li><a href="/account/?pages=1">&laquo;</a></li>
+                            <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                                <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                                    <a href="/account/?pages=<%= i %>"><%= i %></a></li>
+                            <% } %>
+                            <li><a href="/account/?pages=<%= pager.maxPage %>">&raquo;</a></li>
+                        </ul>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

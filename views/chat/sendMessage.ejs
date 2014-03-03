@@ -1,0 +1,48 @@
+        <div class="modal fade" id="messageForm" tabindex="-1" role="dialog" aria-labelledby="messageFormLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="messageFormLabel">メッセージ送信</h4>
+                    </div>
+                    <div class="modal-body">
+                    <input type="text" class="ta form-control" name="prefs">
+                    <input id="hidden_id" name="id" type="hidden" />
+                    <textarea name="allMessage" id="allMessage" class="form-control"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">閉じる</button>
+                        <button id="allSend" class="btn btn-primary"  data-dismiss="modal">送信する</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <link href="/stylesheets/typeahead.js-bootstrap.css" rel="stylesheet">
+        <script type="text/javascript" src="/javascripts/typeahead.min.js"></script>
+        
+<script>
+/*
+$(function() {
+    
+    var userList = [];
+    var setList = function (name,id) {
+        var item = {value:name, id:id};
+        userList.push(item);
+    }
+
+    <% allUsers.forEach(function(user){ %>
+        setList("<%= user.name %>","<%= user._id %>");
+    <% }) %>
+  return $('.ta').typeahead({
+    name: 'prefs',
+    prefetch: userList,
+//    local: ["斉藤", "斉木", "大野", "大原"],
+    limit: 10
+  }).on("typeahead:selected typeahead:autocomplete", function(e, datum) {
+    return $('#hidden_id').val(datum.id);
+  });
+  
+});
+*/
+</script>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+    </head>
+    <body>
+        <%- include ../header.ejs %>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label class="sr-only">Eメールアドレス</label>
+                        <input type="email" class="form-control" placeholder="Eメール">
+                    </div>
+                    <div class="form-group">
+                        <label class="sr-only">Password</label>
+                        <input type="password" class="form-control" placeholder="パスワード">
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                        <input type="checkbox"> 記憶する
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-default">サインイン</button>
+                </form>        
+            </div>
+        </div>
+        <p>ファーストネーム: <input data-bind="value: firstName" /></p>
+        <p>ラストネーム: <input data-bind="value: lastName" /></p>
+        <h2>Hello, <span data-bind="text: fullName"> </span>!</h2>
+    </body>
+    <script type="text/javascript" src="/viewModel/viewUserModel.js"></script>
+</html>

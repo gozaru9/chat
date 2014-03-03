@@ -1,0 +1,8 @@
+module.exports = {
+    'USER_PAGER_NUM':5,
+    'USER_PAGER_LIMIT_NUM':20,
+    'TAG_PAGER_NUM':5,
+    'TAG_PAGER_LIMIT_NUM':20,
+    'INCIDNT_PAGER_NUM':5,
+    'INCIDNT_PAGER_LIMIT_NUM':20,
+};

@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+    <head>
+        <%- include ../head.ejs %>
+        <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/view-script/incidnt.js"></script>
+    </head>
+    <body>
+    <div id="wrap">
+        <%- include ../header.ejs %>
+
+        <div class="chat-container">
+            <div class="row">
+                <h2 class="page-header">incidnt</h2>
+                <div class="btn-group col-md-12 hidden-xs" data-toggle="buttons">
+                    <label class="btn btn-success <% if (status === 0) { %>active<% } %>">
+                        <input id="allRadio" name="statusRadio" type="radio" value=0> ALL
+                    </label>
+                    <label class="btn btn-success <% if (status === 1) { %>active<% } %>">
+                        <input id="openRadio" name="statusRadio" type="radio" value=1> OPNE
+                    </label>
+                    <label class="btn btn-success <% if (status === 2) { %>active<% } %>">
+                        <input id="proRadio" name="statusRadio" type="radio" value=2> IN PROGRESS
+                    </label>
+                    <label class="btn btn-success <% if (status === 3) { %>active<% } %>">
+                        <input id="closeRadio" name="statusRadio" type="radio" value=3> CLOSE
+                    </label>
+                    <label class="btn btn-success <% if (status === 9) { %>active<% } %>">
+                        <input id="removeRadio" name="statusRadio" type="radio" value=9> REMOVE
+                    </label>
+                </div>
+                <input type="hidden" id="viewStatus" value="<%= status %>">
+                <input type="hidden" id="activePage" value="<%= pager.activePage %>">
+                <div class="visible-xs">
+                <select id="statusSelect" class="form-control " style="width:250px">
+                    <option value="0" <% if (status === 0) { %>selected="selected"<% } %>">ALL</option>
+                    <option value="1" <% if (status === 1) { %>selected="selected"<% } %>">OPNE</option>
+                    <option value="2" <% if (status === 2) { %>selected="selected"<% } %>">IN PROGRESS</option>
+                    <option value="3" <% if (status === 3) { %>selected="selected"<% } %>">CLOSE</option>
+                    <option value="9" <% if (status === 9) { %>selected="selected"<% } %>">REMOVE</option>
+                </select>
+                </div>
+                <!--
+                <div class="col-md-6">
+                <label class="">表示件数：</label>
+                <input id="dispNum" type="text" name="dispNum" value="20" size="4">
+                </div>
+                -->
+                <% if (pager.maxPage > 1) {%>
+                <ul id="pagerTop" class="pagination btn-sm">
+                    <li><a href="/incidnt/?status=<%= status %>&pages=1">&laquo;</a></li>
+                    <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                        <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                            <a href="/incidnt/?status=<%= status %>&pages=<%= i %>"><%= i %></a></li>
+                    <% } %>
+                    <li><a href="/incidnt/?status=<%= status %>&pages=<%= pager.maxPage %>">&raquo;</a></li>
+                </ul>
+                <% } %>
+                <table class="table table-hover">
+                    <thead>
+                        <th class="col-md-3 hidden-xs text-center">タグ</th>
+                        <th class="col-md-1 col-xs-2 text-center"><span class="glyphicon glyphicon-info-sign"></span></th>
+                        <th class="col-md-1 hidden-xs"><span class="glyphicon glyphicon-user"></span></th>
+                        <th class="col-md-3 hidden-xs text-center">TO</th>
+                        <th class="col-md-12 col-xs-8 text-center"><span class="glyphicon glyphicon-comment"></span></th>
+                    </thead>
+                    <tbody id="incidntsTable">
+                    <% incidnts.forEach(function(incidnt){ %>
+                        <tr>
+                            <td class="hidden-xs">
+                                <p><span class="tag text-center" style="background-color:<%= incidnt.messages[0].tag[0].color %>"><%= incidnt.messages[0].tag[0].name %></span></p>
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                  <a href="<%= incidnt._id %>" class="dropdown-toggle" data-toggle="dropdown"><%= incidnt.statusName %></a>
+                                  <ul name="statusList" class="dropdown-menu">
+                                    <li <% if (incidnt.status === 1) { %>class="disabled"<% } %>><a href="#" value="1">open</a></li>
+                                    <li <% if (incidnt.status === 2) { %>class="disabled"<% } %>><a href="#" value="2">in progress</a></li>
+                                    <li <% if (incidnt.status === 3) { %>class="disabled"<% } %>><a href="#" value="3">close</a></li>
+                                    <li <% if (incidnt.status === 9) { %>class="disabled"<% } %>><a href="#" value="9">remove</a></li>
+                                  </ul>
+                                  </div>
+                            </td>
+                            <td class="hidden-xs"><%= incidnt.messages[0].user.name %></td>
+                            <td class="hidden-xs"><%= incidnt.messages[0].to.names.join() %></td>
+                            <td><%= incidnt.messages[0].message %></td>
+                        </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+                <% if (pager.maxPage > 1) {%>
+                <ul id="pagerBottom" class="pagination btn-sm">
+                    <li><a href="/incidnt/?status=<%= status %>&pages=1">&laquo;</a></li>
+                    <% for(var i=pager.startPage; i<=pager.endPage; i++) {%>
+                        <li <% if (pager.activePage == i) {%>class="active"<% } %>>
+                            <a href="/incidnt/?status=<%= status %>&pages=<%= i %>"><%= i %></a></li>
+                    <% } %>
+                    <li><a href="/incidnt/?status=<%= status %>&pages=<%= pager.maxPage %>">&raquo;</a></li>
+                </ul>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    </body>
+</html>
+    

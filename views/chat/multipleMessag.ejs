@@ -1,0 +1,28 @@
+        <div class="modal fade" id="multipleMessageForm" tabindex="-1" role="dialog" aria-labelledby="multipleMessageFormLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" name="multipleClose" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="multipleMessageFormLabel">複数の部屋へ同時にメッセージを送信します</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <select multiple id="selectRooms" name="selectRooms" class="form-control" size=10 >
+                                </select>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <textarea name="multipleMessage" id="multipleMessage" class="form-control" placeholder="メッセージを入力してください"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button name="multipleClose" type="button" class="btn btn-default" data-dismiss="modal">閉じる</button>
+                        <button id="multipleSend" class="btn btn-primary"  data-dismiss="modal">送信する</button>
+                    </div>
+                </div>
+            </div>
+        </div>
