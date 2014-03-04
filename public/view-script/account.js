@@ -1,5 +1,4 @@
 var completeButtonCheck = function() {
-    
     if ($('#inputName').val().trim().length === 0 || $('#inputEmail').val().trim().length === 0
         || $('#inputPassword').val().trim().length === 0 || $('#inputPasswordConfirm').val().trim().length === 0) {
         $('#completeButton').attr("disabled", "disabled"); 
@@ -21,25 +20,9 @@ var clear = function() {
     $('#inputPassword').removeClass('error');
     $('#inputPasswordConfirm').removeClass('error');
 };
-var message = function(message, position) {
-    $().toastmessage('showToast', {
-        text     : message,
-        sticky   : true,
-        position : position,
-        type     : 'error'
-    });
-};
 var loadMessage = function(msg) {
-    if ('' !== msg) message(msg, 'top-center');
+    if ('' !== msg) errorMessage(msg, 'top-center');
 };
-var successMessage = function(message) {
-    $().toastmessage('showToast', {
-        text     : message,
-        sticky   : true,
-        position : 'top-center',
-        type     : 'success'
-    });
-}
 var reader = null;
 var targetFile = null;
 function onDrop(event) {
@@ -50,7 +33,7 @@ function onDrop(event) {
     var f = files[0];
     var fileNameArr = f.name.split('.');
     if (fileNameArr[fileNameArr.length-1] !== 'csv') {
-        message('csvをドロップしてください', 'top-center');
+        errorMessage('csvをドロップしてください', 'top-center');
     } else {
         reader = new FileReader();
         reader.readAsText(f);
@@ -97,7 +80,7 @@ $(function() {
             cache: false,
             success: function(data) {
                 if (data.errinfo.status) {
-                    message(data.errinfo.message);
+                    errorMessage(data.errinfo.message);
                 } else {
                     
                     $('#inputName').val(data.target.name);
@@ -108,8 +91,7 @@ $(function() {
                 }
         　　},
         　　error: function(XMLHttpRequest, textStatus, errorThrown) {
-        　　    console.log(XMLHttpRequest);
-        　　    console.log(textStatus);
+        　　    errorMessage();
         　　},
         });
     });
@@ -121,7 +103,7 @@ $(function() {
             
             $('#inputPassword').addClass('error');
             $('#inputPasswordConfirm').addClass('error');
-            message('入力されたパスワードが一致しません', 'top-center');
+            errorMessage('入力されたパスワードが一致しません', 'top-center');
             return false;
         }
         var id = $(this).val();
@@ -133,9 +115,8 @@ $(function() {
             data: checkInfo,
             cache: false,
             success: function(data) {
-                console.log(data);
                 if (data.validationInfo.status) {
-                    message(data.validationInfo.message, 'top-center');
+                    errorMessage(data.validationInfo.message, 'top-center');
                     return false;
                 }
                 if (id) {
@@ -147,9 +128,7 @@ $(function() {
                 document.accountForm.submit();
         　　},
         　　error: function(XMLHttpRequest, textStatus, errorThrown) {
-        　　    console.log(XMLHttpRequest);
-        　　    console.log(textStatus);
-        　　  return ;
+                errorMessage();
         　　},
         });
         return false;
@@ -183,9 +162,9 @@ $(function() {
             processData: false,
             success:function(data){
                 if (data.validationInfo.status) {
-                    message(data.validationInfo.message, 'top-center');
+                    errorMessage(data.validationInfo.message, 'top-center');
                 } else {
-                    successMessage('登録が完了しました。<br>画面をリフレッシュしますか？<a href="/account">はい</a>');
+                    successMessage('登録が完了しました。<br>画面をリフレッシュしますか？<a href="/account">はい</a>', 'top-center');
                 }
             },error: function(data) {
                 
@@ -194,8 +173,5 @@ $(function() {
                 $("#loading").empty();
             }
         });
-        
-//        reader.readAsText($('readFileInfomation').val(), 'shift-jis');
-        
     });
 });

@@ -28,8 +28,7 @@ $(function() {
                         }
                 　　},
                 　　error: function(XMLHttpRequest, textStatus, errorThrown) {
-                　　    console.log(XMLHttpRequest);
-                　　    console.log(textStatus);
+                        errorMessage();
                 　　},
                 });
         }

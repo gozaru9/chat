@@ -74,8 +74,6 @@ var getIncidnt = function(condition) {
     　　},
     　　error: function(XMLHttpRequest, textStatus, errorThrown) {
             getIncidntError();
-            console.log(XMLHttpRequest);
-            console.log(textStatus);
     　　},
     });
 };
@@ -113,14 +111,11 @@ var statusChange = function (target) {
             　　},
             　　error: function(XMLHttpRequest, textStatus, errorThrown) {
                     statusChangeError();
-                    console.log(XMLHttpRequest);
-                    console.log(textStatus);
             　　},
             });
         }
         $('div').removeClass("open");
         return false;
-    
 };
 $(function() {
     

@@ -115,8 +115,6 @@ util.inherits(chatModel, Core);
 chatModel.prototype.save = function(req) {
     
     var chat = new myModel(req.body);
-    console.log('-------chat seve----------------');
-    console.log(chat);
 
     //コールバック内で使用するため参照を保持
     var nextFunc  = this.nextFunc;
@@ -228,8 +226,6 @@ chatModel.prototype.addMyMessage = function(data) {
  */
 chatModel.prototype.memberUpdate = function(data, callback) {
 
-    console.log('-------chatModel member update----------------');
-    console.log(data);
     var Chat = this.db.model(collection);
     Chat.findOne({ "_id" : data.roomId}, function(err, room){
         room.users = data.users;
@@ -243,14 +239,15 @@ chatModel.prototype.memberUpdate = function(data, callback) {
  * @method getMessageById
  * @author niikwa
  * @param {Object} data data.roomId data.statsu
+ * @param {Boolean} isMyRoom
+ * @param {Object} callback
  */
-chatModel.prototype.getMessageById = function(data, callback) {
+chatModel.prototype.getMessageById = function(data, isMyRoom, callback) {
     var format = 'YYYY-MM-DD 00:00:00';
     var before = moment().format(format);
     //1日前
     if (data.status === 'beforedayStatus1') {
         before = moment().subtract('days', 1).format(format);
-        
     //7日前
     } else if (data.status === 'beforedayStatus2') {
         before = moment().subtract('days', 7).format(format);
@@ -263,15 +260,30 @@ chatModel.prototype.getMessageById = function(data, callback) {
     } else if (data.status === 'beforedayStatus4') {
         before = moment().subtract('months', 3).format(format);
     }
-    var Chat = this.db.model(collection);
     var Tags = this.db.model('tags');
-    Chat.findOne({'_id': data.roomId}).lean().populate(
-        'messages', null , { 'created': { $gte: before } }, { sort: { 'created': 1 } })
-        .exec(function(err, chatItem) {
-            
-            var opts = {path:'messages.tag', model:'tags'};
-            Tags.populate(chatItem, opts, callback);
-        });
+    
+    if (isMyRoom) {
+        
+        var My = this.db.model(collection3);
+        My.findOne({'recipient': data._id}).lean().populate(
+            'messages', null , { 'created': { $gte: before } }, { sort: { 'created': 1 } })
+            .exec(function(err, chatItem) {
+                
+                var opts = {path:'messages.tag', model:'tags'};
+                Tags.populate(chatItem, opts, callback);
+            });
+    } else {
+        
+        var Chat = this.db.model(collection);
+        Chat.findOne({'_id': data.roomId}).lean().populate(
+            'messages', null , { 'created': { $gte: before } }, { sort: { 'created': 1 } })
+            .exec(function(err, chatItem) {
+                
+                var opts = {path:'messages.tag', model:'tags'};
+                Tags.populate(chatItem, opts, callback);
+            });
+    }
+
     
 //    getMessage(data.roomId, before, callback);
 };
@@ -324,16 +336,9 @@ function getMessage(id, before, callback) {
  */
 chatModel.prototype.getMyRoom = function(req, callback) {
 
-    console.log('-------chatModel getMyRoom----------------');
-    
-    //コールバック内で使用するため参照を保持
-//    var nextFunc  = this.nextFunc;
-//    var parameter = this.parameter;
-    
     var Chat = this.db.model(collection);
-
     var id = req.session._id;
-    Chat.find({ "users._id" : { $in:[id] } }, callback).populate('messages', null, null, { sort: { 'created': 1 } });
+    Chat.find({ "users._id" : { $in:[id] } },null, {sort:{'created': 1}},callback).populate('messages', null, null, { sort: { 'created': 1 } });
 };
 /**
  * 自分の入れる部屋を取得する.
@@ -349,7 +354,6 @@ chatModel.prototype.getMyRoomParts = function(req) {
     var parameter = this.parameter;
     
     var Chat = this.db.model(collection);
-
     var id = req.session._id;
     Chat.find({ "users._id" : { $in:[id] } }, function(err, room) {
 
@@ -367,17 +371,58 @@ chatModel.prototype.getMyRoomParts = function(req) {
     }).populate('messages');
 };
 /**
- * 自分あてのＴＯメッセージを取得する.
+ * 本日以降の自分あてのＴＯメッセージを取得する.
  * 
  * @method getMyMessages
  * @author niikawa
- * @param {String} id 削除対象のID
+ * @param {String} id ユーザーID
  * @param {Function} callback
  */
 chatModel.prototype.getMyMessages = function(id,callback) {
     var My = this.db.model(collection3);
-    My.findOne({'recipient': id}, callback).populate('messages', null, null, { sort: { 'created': 1 } });
-     
+    var Tags = this.db.model('tags');
+    My.findOne({'recipient': id}).lean().populate(
+        'messages', null , { 'created': { $gte: moment().format('YYYY-MM-DD 00:00:00') } }, { sort: { 'created': 1 } })
+        .exec(function(err, chatItem) {
+            
+            var opts = {path:'messages.tag', model:'tags'};
+            Tags.populate(chatItem, opts, callback);
+        });
+};
+/**
+ * 自分あてのＴＯメッセージをすべて取得する.
+ * 
+ * @method getMyMessagesAll
+ * @author niikawa
+ * @param {String} id ユーザーID
+ * @param {Function} callback
+ */
+chatModel.prototype.getMyMessagesAll = function(id,callback) {
+    var My = this.db.model(collection3);
+    var Tags = this.db.model('tags');
+    My.findOne({'recipient': id}).lean().populate('messages', null, null, { sort: { 'created': 1 } })
+        .exec(function(err, chatItem) {
+            
+            var opts = {path:'messages.tag', model:'tags'};
+            Tags.populate(chatItem, opts, callback);
+        });
+};
+/**
+ * 自分がルームに入れるかを判定する
+ * 
+ * @method roomInCheck
+ * @author niikawa
+ * @param {String} id ユーザーID
+ * @param {String} roomId ルームID
+ * @param {Function} callback
+ */
+chatModel.prototype.roomInCheck = function(id, roomId, callback) {
+    var Chat = this.db.model(collection);
+    Chat.find( {$and: [{'_id' : roomId}, {"users._id" : { $in:[id] }} ] }, function(err, room) {
+        var exsits = true;
+        if (room.length === 0) exsits = false;
+        callback(err, exsits);
+    });
 };
 /**
  * 部屋を削除する.

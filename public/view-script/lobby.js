@@ -28,13 +28,7 @@ var getMyRoomLobby = function (isMyCreate, roomName) {
             document.getElementById("myLoomLst").innerHTML += element;
     　　},
     　　error: function(XMLHttpRequest, textStatus, errorThrown) {
-            $().toastmessage('showToast', {
-                text     : '通信に失敗しました',
-                sticky   : true,
-                type     : 'error'
-            });
-    　　      console.log(XMLHttpRequest);
-            console.log(textStatus);
+            errorMessage();
     　　},
     });
 };
@@ -57,24 +51,33 @@ $(function() {
             $('span[name='+data.roomId+']').text(unReadNum);
             updateUnReadNum(data.roomId, unReadNum);
         }
-	});
-	socket.on('create chat msg lobby', function (roomName) {
-	    getMyRoomLobby(false, roomName);
-
-	});
-	socket.on('create chat complate lobby', function (data) {
-	    getMyRoomLobby(true, '');
-	});
+        
+        var toNum = data.toTarget.length;
+        var my = $('#cryptoId').val();
+        for (var toTargetIndex=0; toTargetIndex < toNum; toTargetIndex++) {
+            if (my == data.toTarget[toTargetIndex]) {
+                var dispRoomUnReadNum = $('span[name=myRoom]').html();
+                if (dispRoomUnReadNum === undefined) {
+                    $('span[name=myRoom]').text(1);
+                } else {
+                    var unReadNum = Number(dispRoomUnReadNum)+1;
+                    $('span[name=myRoom]').text(unReadNum);
+                }
+            }
+        }
+    });
+    socket.on('create chat msg lobby', function (roomName) {
+        getMyRoomLobby(false, roomName);
+    
+    });
+    socket.on('create chat complate lobby', function (data) {
+        getMyRoomLobby(true, '');
+    });
     socket.on('member add lobby', function (data) {
         getMyRoomLobby(false, data.roomName);
     });
     socket.on('member delete lobby', function (data) {
-        $().toastmessage('showToast', {
-            text     : '['+data.roomName+']<br>のメンバーから外れました',
-            sticky   : true,
-            type     : 'warning'
-        });
+        warningMessage('['+data.roomName+']<br>のメンバーから外れました');
         $('#'+data.roomId).parent().parent().parent().remove();
     });
-	
 });

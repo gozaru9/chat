@@ -17,10 +17,8 @@ var incidnt = require("./routes/incidnt");
 var mongoose = require('mongoose');
 var configDB = require('./config/database.js');
 var db = mongoose.connect(configDB.url);
-
 //セッション管理
 var MongoStore = require('connect-mongo')(express);
-
 // all environments
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
@@ -97,6 +95,7 @@ app.post('/chat/fixedSectence/update', chat.fixedSectenceUpdate);
 app.post('/chat/fixedSectence/delete', chat.fixedSectenceDelete);
 app.post('/chat/getFixedById', chat.getFixedById);
 app.post('/chat/updateUnRead', chat.updateUnRead);
+app.post('/chat/messageDownLoad', chat.messageDownLoad);
 
 var server = http.createServer(app).listen(app.get('port'), function(){
 console.log("Express server listening on port " + app.get('port'));
@@ -210,7 +209,7 @@ var chatRoom = io.sockets.on('connection', function (socket) {
         data.userName=socket.handshake.session.name;
         data.time=moment().format('YYYY-MM-DD HH:mm:ss');
         chatRoom.in(data.roomId).emit('msg push', data);
-        var lobbyPush = {roomId: data.roomId};
+        var lobbyPush = {roomId: data.roomId, toTarget:data.toTarget};
         socket.broadcast.emit('msg push lobby', lobbyPush);
         if ((data.tag.length !== 0)) {
             socket.broadcast.emit('incident push', '');
@@ -286,8 +285,10 @@ var chatRoom = io.sockets.on('connection', function (socket) {
     });
     //過去のメッセージを取得
     socket.on('get beforeday', function(data) {
-        
-        Chat.getMessageById(data, function(err, roomInfo) {
+        //TODO これはいけてない
+        var isMyRoom = data.roomId === 'myRoom';
+        data._id = socket.handshake.session._id;
+        Chat.getMessageById(data, isMyRoom, function(err, roomInfo) {
             var push = {roomId: data.roomId, messages: roomInfo.messages};
             socket.emit('beforeday push', push);
         });
@@ -295,10 +296,10 @@ var chatRoom = io.sockets.on('connection', function (socket) {
     //部屋作成時の通知
     socket.on('create chat', function(chat) {
         
-        console.log('create chat----------------------');
         var memberLen = chat.users.length;
         for (var i=0; i < memberLen; i++) {
             User.getById(chat.users[i]._id, function(err, user) {
+                if (err) console.log('create room message err:'+err);
                 if (user) {
                     console.log(user);
                     //コメクションが確立しているかつ自分自身以外のユーザーに送信

@@ -54,6 +54,7 @@
                             resizeArea();
                     　　},
                     　　error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    　　    
                             $().toastmessage('showToast', {
                                 text     : 'データの取得に失敗しました',
                                 sticky   : true,
@@ -79,12 +80,27 @@
                 <div id="all"></div>
                 <div class="col-md-9">
                     <div class="page-header">
-                        <h3 id="roomName"></h3>
+                        <div class="row">
+                            <div class="col-md-8 col-sm-8">
+                                <h3 id="roomName"></h3>
+                            </div>
+                            <div class="col-md-4 col-sm-4 hidden-xs" style="margin-top:20px">
+                                <div id="messageDownload" class="btn-group pull-right">
+                                    <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown">ダウンロード <span class="caret"></span></button>
+                                    <ul class="dropdown-menu">
+                                        <li><a name="messageDownload" href="#" value="beforedayStatus1">1日前</a></li>
+                                        <li><a name="messageDownload" href="#" value="beforedayStatus2">7日前</a></li>
+                                        <li><a name="messageDownload" href="#" value="beforedayStatus3">60日前</a></li>
+                                        <li><a name="messageDownload" href="#" value="beforedayStatus4">3ヶ月前</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div id="chatMainDiv" class="chat-panel panel panel-default">
                         <div class="panel-heading">
                             <i class="fa fa-comments fa-fw"></i>
-                            本日(<span id="today"></span>) <a id="beforedayStatus1" name="beforeday" href="#">1日前</a> <a id="beforedayStatus2" name="beforeday" href="#">7日前</a> <a id="beforedayStatus3" name="beforeday" href="#">60日前</a> <a id="beforedayStatus4" name="beforeday" href="#">3ヶ月前</a>
+                            <a id="beforedayStatus0" name="beforeday" href="#">本日</a>(<span id="today"></span>) <a id="beforedayStatus1" name="beforeday" href="#">1日前</a> <a id="beforedayStatus2" name="beforeday" href="#">7日前</a> <a id="beforedayStatus3" name="beforeday" href="#">60日前</a> <a id="beforedayStatus4" name="beforeday" href="#">3ヶ月前</a>
                             <div class="btn-group pull-right">
                                 <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
                                     <i class="fa fa-chevron-down"></i>
@@ -183,6 +199,9 @@
                           <li name="myRoom">
                             <a name="roomSelectRadio" href="#">
                               MY ROOM
+                              <% if (myRoom.unReadNum != 0) { %>
+                              <span name="myRoom" class="badge pull-right"><%= myRoom.unReadNum %></span>
+                              <% } %>
                             </a>
                           </li>
                         <% rooms.forEach(function(room){ %>

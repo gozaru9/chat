@@ -13,6 +13,7 @@ var tags = new tagsModel();
 var monitorModel = require('../model/monitorModel');
 var monitor = new monitorModel();
 var logger = require('../util/logger');
+var fs = require('fs');
 
 /**
  * chat server side
@@ -33,39 +34,37 @@ exports.index = function(req, res){
     logger.appDebug(req.session);
     if (req.session.isLogin) {
         
-        var isMyRoom = req.body.room === 'myRoom';
-        //parallelだとデータを取得できない。。。。
         async.parallel(
             [function (callback) {
-                //固有定型文取得
+                //固有定型文取得 results[0]
                 fixed.getMySectence(req.session._id, callback);
                 
             },function (callback) {
-                //公開定型文取得
+                //公開定型文取得 results[1]
                 fixed.getSectence(callback);
                 
             },function (callback) {
-                //自分の入れるルーム取得
+                //自分の入れるルーム取得 results[2]
                 chat.getMyRoom(req, callback);
                 
             },function(callback) {
-                if (req.body.room === 'myRoom') {
-                    //Toメッセージ用メッセージ取得
-                    chat.getMyMessages(req.session._id, callback);
-                } else {
-                    callback();
-                }
-                
+                //Toメッセージ用メッセージ取得 results[3]
+                chat.getMyMessagesAll(req.session._id, callback);
+
             }, function(callback) {
-                //タグ取得
+                //タグ取得 results[4]
                 tags.getAllSync(callback);
                 
             }, function(callback) {
-                //インシデント
+                //インシデント results[5]
                 monitor.getAllSync(callback);
 
+            }, function(callback) {
+                //未読数 results[6]
+                unRead.getUnReadByUserId(req.session._id, callback);
+
             },function(callback) {
-                //全ユーザー情報取得
+                //全ユーザー情報取得 results[7]
                 model.getAllSync(callback);
             }]
             ,function(err, results) {
@@ -74,75 +73,75 @@ exports.index = function(req, res){
                     logger.appError('chat.index データ取得エラー');
                     logger.appError(err);
                 }
+                //TO用のルーム以外の未読数を算出
                 var rooms = results[2];
-                var allUsers = results[results.length-1];
-                unRead.getUnReadByUserId(req.session._id, function(err, target) {
+                var now = moment().format('YYYY-MM-DD HH:mm:ss');
+                setUnReadNum(req.session._id, rooms, results[6], now, req.body.room);
+                
+                var name = '';
+                var users=[];
+                var messages=[];
+                var isMyRoom = req.body.room === 'myRoom';
+                var myRoom = {roomId:'myRoom',unReadNum:0};
+                //TO用のルームの場合（ほんとはこんな判定したくない）
+                if (isMyRoom) {
                     
-                    if (err) {
-                        logger.appError('chat.index unRead.getUnReadByUserId error');
-                        logger.appError(err);
-                    }
+                    name = 'MY ROOM';
+                    users = results[3].users;
+                    messages = results[3].messages;
                     
-                    var name = '';
-                    var users=[];
-                    var messages=[];
-                    var now = moment().format('YYYY-MM-DD HH:mm:ss');
-                    setUnReadNum(req.session._id, rooms, target, now, req.body.room);
-                    if(req.body.room) {
-                        //TO用のルームの場合（ほんとはこんな判定したくない）
-                        if (isMyRoom) {
-                            name = 'MY ROOM';
-                            users = results[3].users;
-                            messages = results[3].messages;
-                        } else {
-                            
-                            var roomLength = Array.isArray(rooms) ? rooms.length : 0;
-                            for(var i=0; i<roomLength; i++) {
-                                if (rooms[i]._id == req.body.room) {
-                                    name = rooms[i].name;
-                                    users = rooms[i].users;
-                                    messages = rooms[i].messages;
-                                    break;
-                                }
-                            }
+                //POST値を改竄されていても落ちないように判定
+                } else if (req.body.room) {
+                    //TO用のルーム以外の場合はTO用のルームの未読数を算出
+                    myRoom = setUnReadNumMyRoom(results[3], req.session.unreadjudgmentTime);
+                    //選択されたルームを特定
+                    var roomLength = Array.isArray(rooms) ? rooms.length : 0;
+                    for(var i=0; i<roomLength; i++) {
+                        if (rooms[i]._id == req.body.room) {
+                            name = rooms[i].name;
+                            users = rooms[i].users;
+                            messages = rooms[i].messages;
+                            break;
                         }
                     }
-                    var allUsersNum = Array.isArray(allUsers) ? allUsers.length : 0;
-                    for (var allUserIndex = 0; allUserIndex < allUsersNum; allUserIndex++) {
-                        allUsers[allUserIndex].status = getStatusClass(allUsers[allUserIndex].loginStatus);
+                }
+                //ユーザーのステータスを設定
+                var allUsers = results[7];
+                var allUsersNum = Array.isArray(allUsers) ? allUsers.length : 0;
+                for (var allUserIndex = 0; allUserIndex < allUsersNum; allUserIndex++) {
+                    allUsers[allUserIndex].status = getStatusClass(allUsers[allUserIndex].loginStatus);
+                }
+                //TODO ここはGroup By Count にしたいがmongooseのスキルが足りない
+                var inc = results[5];
+                var incNum = inc.length;
+                var open = 0;
+                var prog = 0;
+                var close = 0;
+                var remove = 0;
+                for (var incIndex=0; incIndex<incNum; incIndex++) {
+                    
+                    switch (inc[incIndex].status) {
+                        case 1:
+                            open++;
+                            break;
+                        case 2:
+                            prog++;
+                            break;
+                        case 3:
+                            close++;
+                            break;
+                        case 9:
+                            remove++;
+                            break;
+                        default:
+                            break;
                     }
-                    //TODO ここはGroup By Count にしたいがmongooseのスキルが足りない
-                    var inc = results[5];
-                    var incNum = inc.length;
-                    var open = 0;
-                    var prog = 0;
-                    var close = 0;
-                    var remove = 0;
-                    for (var incIndex=0; incIndex<incNum; incIndex++) {
-                        
-                        switch (inc[incIndex].status) {
-                            case 1:
-                                open++;
-                                break;
-                            case 2:
-                                prog++;
-                                break;
-                            case 3:
-                                close++;
-                                break;
-                            case 9:
-                                remove++;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    var incData = {openCount:open, progCount:prog, closeCount:close, removeCount:remove, allCount:incNum};
-                    var fixed = results[0].concat(results[1]);
-                    res.render('chat/index', {title: 'chat', userName:req.session.name, _id:req.session._id, role:req.session.role,
-                        rooms:rooms, targetRoomId:req.body.room, roomName:name, users:users, 
-                        messages:messages, allUsers:allUsers, fixed:fixed, tags:results[4], incidnt:incData});
-                });
+                }
+                var incData = {openCount:open, progCount:prog, closeCount:close, removeCount:remove, allCount:incNum};
+                var fixed = results[0].concat(results[1]);
+                res.render('chat/index', {title: 'chat', userName:req.session.name, _id:req.session._id, role:req.session.role,
+                    rooms:rooms, targetRoomId:req.body.room, roomName:name, users:users, myRoom:myRoom,
+                    messages:messages, allUsers:allUsers, fixed:fixed, tags:results[4], incidnt:incData});
             });
 
     } else {
@@ -167,35 +166,34 @@ exports.lobby = function(req, res){
             //loginからの遷移ではない場合
             req.session.unreadjudgmentTime = moment().format('YYYY-MM-DD HH:mm:ss');
         }
-        async.series(
+        async.parallel(
             [function (callback) {
                 chat.getMyRoom(req, callback);
             },function (callback) {
-                model.getAll(req, callback);
+                model.getAllSync(callback);
             },function(callback) {
                 unRead.getUnReadByUserId(req.session._id, callback);
+            },function(callback) {
+                chat.getMyMessagesAll(req.session._id, callback);
             }]
             ,function(err, results) {
                 
-                unRead.getUnReadByUserId(req.session._id, function(err, target) {
-
-                    if (err) {
-                        logger.appError('chat.lobby : unRead.getUnReadByUserId error');
-                        logger.appError(err);
-                    }
-                    
-                    var rooms = results[0];
-                    setUnReadNum(req.session._id, rooms, target, req.session.unreadjudgmentTime);
-                    
-                    var allUsers = results[1];
-                    var allUsersNum = allUsers.length;
-                    for (var allUserIndex = 0; allUserIndex < allUsersNum; allUserIndex++) {
-                        allUsers[allUserIndex].status = getStatusClass(allUsers[allUserIndex].loginStatus);
-                    }
-                    res.render('chat/lobby', 
-                        {title: 'LOBBY', userName: req.session.name, role:req.session.role,
-                            _id:req.session._id, rooms:rooms, allUsers: allUsers});
-                });
+                if (err) {
+                    logger.appError('chat.lobby error');
+                    logger.appError(err);
+                }
+                
+                var rooms = results[0];
+                setUnReadNum(req.session._id, rooms, results[2], req.session.unreadjudgmentTime);
+                var myRoom = setUnReadNumMyRoom(results[3], req.session.unreadjudgmentTime);
+                var allUsers = results[1];
+                var allUsersNum = allUsers.length;
+                for (var allUserIndex = 0; allUserIndex < allUsersNum; allUserIndex++) {
+                    allUsers[allUserIndex].status = getStatusClass(allUsers[allUserIndex].loginStatus);
+                }
+                res.render('chat/lobby', 
+                    {title: 'LOBBY', userName: req.session.name, role:req.session.role,
+                        _id:req.session._id, rooms:rooms, allUsers: allUsers, myRoom:myRoom});
         });
     } else {
         
@@ -365,10 +363,10 @@ exports.getUserByRoomId = function(req, res) {
     
     logger.appDebug('chat.getUserByRoomId start');
     if (req.body.roomId) {
-
+        var isMyRoom = req.body.roomId === 'myRoom';
         async.series(
             [function (callback) {
-                if (req.body.roomId === 'myRoom') {
+                if (isMyRoom) {
                     
                     chat.getMyMessages(req.session._id, callback);
                 } else {
@@ -392,7 +390,7 @@ exports.getUserByRoomId = function(req, res) {
                 }
                 var users = [];
                 //TOの部屋の場合
-                if (req.body.roomId === 'myRoom') {
+                if (isMyRoom) {
                     users[0] = {'_id': req.session._id, 'name':req.session.name};
                 } else {
                     users = room.users;
@@ -685,6 +683,113 @@ exports.getFixedById = function(req, res) {
     }
 };
 /**
+ * リクエストを受け取り、指定された部屋のメッセージをダウンロードさせる（ajax）
+ * 
+ * @author niikawa
+ * @method messageDownLoad
+ * @param {Object} req 画面からのリクエスト
+ * @param {Object} res 画面へのレスポンス
+ */
+exports.messageDownLoad = function(req, res) {
+    logger.appDebug('chat messageDownLoad start');
+    var isMyRoom = req.body.roomId === 'myRoom';
+    if (isMyRoom) {
+        req.body._id = req.session._id;
+        createDownLoadZip(req, res, isMyRoom);
+    } else {
+        
+        //ルームのメンバーに登録されているかを判定する
+        chat.roomInCheck(req.session._id, req.body.roomId, function(err, isRoomIn) {
+            
+            if (!isRoomIn) {
+                var execute = {status:true, path:'', message:''};
+                execute.status = false;
+                execute.message = '指定された部屋のメンバーではありません';
+                res.send({execute: execute});
+            } else {
+                
+                createDownLoadZip(req, res, isMyRoom);
+            }
+        });
+    }
+};
+/**
+ * ダウンロードさせるZIPを作成する
+ * 
+ * @author niikawa
+ * @method createDownLoadZip
+ * @param {Object} req 画面からのリクエスト.右のプロパティを持つ req.body._id, req.body.roomId, req.body.status, 
+ * @param {Object} res 画面へのレスポンス
+ * @param {Boolean} isMyRoom
+ * 
+ */function createDownLoadZip(req, res, isMyRoom) {
+    logger.appDebug('chat createMessageLine start');
+    var execute = {status:true, path:'', message:''};
+    chat.getMessageById(req.body, isMyRoom, function(err, item){
+        if (err) {
+            logger.appError('chat messageDownLoad getMessageById データの取得に失敗しました');
+            logger.appError(err);
+            logger.appError('request value');
+            logger.appError(req.body);
+        }
+        var lineNum = item.messages.length;
+        logger.appDebug(lineNum);
+        var line = '';
+        if (lineNum !== 0) {
+            var now = moment();
+            var roomName = isMyRoom ? 'MYROOM' : item.name;
+            var zipName = roomName+'_'+now.format('YYYYMMDD_HHmmssSSS')+'.zip';
+            //ヘッダー
+            line += '-----------------------------------------------------------------'+'\n';
+            line += roomName + '  ダウンロード日時:'+now.format('YYYY-MM-DD HH:mm:ss')+'\n';
+            line += '-----------------------------------------------------------------'+'\n';
+            //メッセージのフォーマットは以下の通りとする
+            //YYYY-MM-DD HH:mm:ss ユーザー名 TO:TOユーザー名 タグ:タグ名
+            try {
+                
+                for (var messageindex = 0; messageindex < lineNum; messageindex++) {
+                    var time = moment(item.messages[messageindex].created).format('YYYY-MM-DD HH:mm:ss');
+                    line += (time + ' ' + item.messages[messageindex].user.name);
+                    
+                    if (item.messages[messageindex].to) {
+                        
+                        if (item.messages[messageindex].to.names.length !== 0
+                            && item.messages[messageindex].to.names[0] !== '') {
+                            var toList = item.messages[messageindex].to.names.join();
+                            line += (' TO:'+toList);
+                        }
+                    }
+                    if (item.messages[messageindex].tag) {
+                        
+                        if (item.messages[messageindex].tag.length !== 0) {
+                            line += (' タグ:'+item.messages[messageindex].tag[0].name);
+                        }
+                    }
+                    line += '\n';
+                    line += item.messages[messageindex].message + '\n';
+                }
+                
+                var fileName = 'message.txt';
+                var zip = new require('node-zip')();
+                zip.file(fileName, line);
+                var data = zip.generate({base64:false,compression:'DEFLATE'});
+                fs.writeFileSync('public/downloads/'+zipName, data, 'binary');
+                execute.path = '/downloads/'+zipName;
+            
+            } catch(err) {
+                
+                execute.status = false;
+                execute.message = 'ダウンロードするメッセージがありません';
+            }
+        } else {
+            
+            execute.status = false;
+            execute.message = 'ダウンロードに失敗しました';
+        }
+        res.send({execute: execute});
+    });
+}
+/**
  * パラメータに応じたステータスを表示するclass名を返却する
  * 
  * @author niikawa
@@ -784,7 +889,7 @@ function setUnReadNum(userId, rooms, unReads, unreadjudgmentTime, unReadOffRoomI
         var messagesNum = rooms[index].messages.length;
         var unReadNum = 0;
         if (messagesNum <= 0) continue;
-        for (messagesNum; messagesNum !== 0;messagesNum--) {
+        for (messagesNum; messagesNum > 0;messagesNum--) {
             
             var messageTime = moment(rooms[index].messages[messagesNum-1].time);
             if (messageTime.isAfter(judgmentTime)) {
@@ -803,6 +908,37 @@ function setUnReadNum(userId, rooms, unReads, unreadjudgmentTime, unReadOffRoomI
         //非同期になるが気にしない
         unRead.updateUnRead(data, null);
     }
+    
     logger.appDebug('chat.setUnReadNum end');
     return;
+}
+/**
+ * 未読数を取得する
+ * 
+ * @author niikawa
+ * @method setUnReadNumMyRoom
+ * @param {Object} myMessages
+ * @param {Date} unreadjudgmentTime
+ */
+function setUnReadNumMyRoom(myMessages, unreadjudgmentTime) {
+    
+    var messagesNum = myMessages.messages.length;
+    var unReadNum = 0;
+    var judgmentTime = '';
+    if (unreadjudgmentTime === null) {
+        judgmentTime = moment();
+    } else {
+        judgmentTime = moment(unreadjudgmentTime);
+    }
+    
+    for (messagesNum; messagesNum > 0;messagesNum--) {
+        
+        var messageTime = moment(myMessages.messages[messagesNum-1].time);
+        if (messageTime.isAfter(judgmentTime)) {
+            unReadNum++;
+        } else {
+            break;
+        }
+    }
+    return {roomId:'myRoom',unReadNum:unReadNum};
 }

@@ -10,8 +10,6 @@ var coreModel = function coreModel(modelName) {
     
     this.modelName = modelName;
     this.schema = '';
-    console.log('execute coreModel');
-    console.log(this.modelName);
 };
 
 //継承先で使用できる変数
@@ -59,7 +57,6 @@ coreModel.prototype.setNextParam = function(param) {
  * @param {Function} callback
  */
 coreModel.prototype.getAll = function(res,callback){
-    console.log('------------get all ----------');
     var target = this.db.model(this.modelName);
     target.find({}, function(err, docs) {
         callback(res, docs);
@@ -76,10 +73,8 @@ coreModel.prototype.getAll = function(res,callback){
  * @param {Function} callback
  */
 coreModel.prototype.getAllSync = function(callback){
-    console.log('------------get all sync----------');
     var target = this.db.model(this.modelName);
-    
-    target.find({}, callback).sort( { _id : 1} );
+    target.find({}, callback).sort( { 'created' : 1} );
 };
 
 /**
@@ -91,8 +86,6 @@ coreModel.prototype.getAllSync = function(callback){
  * @param {Function} callback
  */
 coreModel.prototype.getById = function(id, callback){
-    console.log('-----------get by id ----------');
-    console.log(this.modelName+':'+id);
     var target = this.db.model(this.modelName);
     target.findOne({'_id':id}, function(err, docs){
         callback(err, docs);
@@ -150,7 +143,6 @@ coreModel.prototype.remove = function(_id){
     var target = this.db.model(this.modelName);
     target.findOne({'_id': _id},function(err,item){
     if(err || item === null){return;}
-        console.log('-----remove item------');
         item.remove();
     });
 };

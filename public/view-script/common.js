@@ -16,9 +16,26 @@ var accountClear = function() {
     $('#accountPasswordConfirm').removeClass('error');
     $('#accountCompleteButton').attr("disabled", "disabled"); 
 };
-var errorMessage = function(message, position) {
+var infoMessage = function(message, position) {
     $().toastmessage('showToast', {
         text     : message,
+        sticky   : true,
+        position : position,
+        type     : 'notice'
+    });
+};
+var warningMessage = function(message, position) {
+    $().toastmessage('showToast', {
+        text     : message,
+        sticky   : true,
+        position : position,
+        type     : 'warning'
+    });
+};
+var errorMessage = function(message, position) {
+    var dispMessage = (message.trim().length === 0) ? '通信エラー' : message;
+    $().toastmessage('showToast', {
+        text     : dispMessage,
         sticky   : true,
         position : position,
         type     : 'error'
@@ -84,7 +101,6 @@ $(function() {
             errorMessage('入力されたパスワードが一致しません', 'top-center');
             return false;
         }
-        var id = $('#cryptoId').val();
         var checkInfo = {mailAddress:$('#mailAddress').text(), password:$('#accountPassword').val(), passwordConfirm: $('#accountPasswordConfirm').val()};
         $.ajax({
             type: 'POST',
