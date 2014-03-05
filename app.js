@@ -96,6 +96,7 @@ app.post('/chat/fixedSectence/delete', chat.fixedSectenceDelete);
 app.post('/chat/getFixedById', chat.getFixedById);
 app.post('/chat/updateUnRead', chat.updateUnRead);
 app.post('/chat/messageDownLoad', chat.messageDownLoad);
+app.post('/chat/getRoomEditInfo', chat.getRoomEditInfo);
 
 var server = http.createServer(app).listen(app.get('port'), function(){
 console.log("Express server listening on port " + app.get('port'));
@@ -322,21 +323,21 @@ var chatRoom = io.sockets.on('connection', function (socket) {
         //追加/削除されたメンバーにのみ通知する
         chat.memberUpdateBySocket(data, function(err, target) {
             
-            var sendData= {roomId: data.roomId, roomName:target.roomName};
             //削除通知を行う
+            var delSendData = {roomId: data.roomId, roomName:target.roomName};
             for (var delKey in target.deleteUsers) {
                 
-                io.sockets.socket(target.deleteUsers[delKey].socketId).emit('member delete', sendData);
-                io.sockets.socket(target.deleteUsers[delKey].socketId).emit('member delete lobby', sendData);
+                io.sockets.socket(target.deleteUsers[delKey].socketId).emit('member delete', delSendData);
+                io.sockets.socket(target.deleteUsers[delKey].socketId).emit('member delete lobby', delSendData);
             }
             //追加通知を行う
+            var addSendData = {roomId: data.roomId, roomName:data.name};
             for (var addKey in target.addUsers) {
                 
-                io.sockets.socket(target.addUsers[addKey].socketId).emit('member add', sendData);
-                io.sockets.socket(target.addUsers[addKey].socketId).emit('member add lobby', sendData);
+                io.sockets.socket(target.addUsers[addKey].socketId).emit('member add', addSendData);
+                io.sockets.socket(target.addUsers[addKey].socketId).emit('member add lobby', addSendData);
             }
-            //
-            var roomSendData = {roomId: data.roomId, roomName: target.roomName, users: data.users};
+            var roomSendData = {roomId: data.roomId, roomName: data.name, users: data.users};
             chatRoom.in(data.roomId).emit('member edit complete', roomSendData);
         });
     });

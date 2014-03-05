@@ -178,25 +178,31 @@ $(function() {
             $('#'+data.after).html(Number($('#'+data.after).html())+1);
         }
     });
-    //ユーザーの追加/変更
+    //部屋名称ユーザーの追加/変更
     $('#memberEditButton').click(function(){
         var id = $(this).val();
         $('#selectEditMember').children().remove();
         $('#selectedEditMember').children().remove();
         $.ajax({
             type: 'POST',
-            url: '/chat/getUserByRoomId',
+            url: '/chat/getRoomEditInfo',
             dataType: 'json',
             data: ({roomId:id}),
             cache: false,
             success: function(data) {
-                var length = data.users.length;
-                for (var i = 0; i < length; i++) {
-                    $('#selectedEditMember').append($('<option>',{value:data.users[i]._id}).append(data.users[i].name));
-                }
-                var allLength = data.allUsers.length;
-                for (var j = 0; j < allLength; j++) {
-                    $('#selectEditMember').append($('<option>',{value:data.allUsers[j]._id}).append(data.allUsers[j].name));
+                if (data.status) {
+                    
+                    $('#editRoomName').val(data.name);
+                    var length = data.users.length;
+                    for (var i = 0; i < length; i++) {
+                        $('#selectedEditMember').append($('<option>',{value:data.users[i]._id}).append(data.users[i].name));
+                    }
+                    var allLength = data.allUsers.length;
+                    for (var j = 0; j < allLength; j++) {
+                        $('#selectEditMember').append($('<option>',{value:data.allUsers[j]._id}).append(data.allUsers[j].name));
+                    }
+                } else {
+                    errorMessage(data.message);
                 }
             },
             error: function(XMLHttpRequest, textStatus, errorThrown) {
@@ -214,7 +220,13 @@ $(function() {
         $('#roomName').html($(this).text());
         $('#memberEditButton').val(id);
         $('#sendButton').val(id);
-        $('#sendButton').removeAttr("disabled");
+        if (id === 'myRoom') {
+            $('#sendButton').attr("disabled", "disabled");
+            $('#memberEditButton').attr("disabled", "disabled");
+        } else {
+            $('#sendButton').removeAttr("disabled");
+            $('#memberEditButton').removeAttr("disabled");
+        }
         var target = $('#roomContents').find(".active").attr("id");
         $('#'+target).hide(500);
         $('#'+target).removeClass("active");
@@ -238,23 +250,28 @@ $(function() {
             data: ({roomId:id}),
             cache: false,
             success: function(data) {
-                $('#roomUserList').children().remove();
-                var length = data.users.length;
-                var toElement = '';
-                for (var i = 0; i < length; i++) {
-                    $('#roomUserList').append($("<li>",{name: data.users[i]._id}).append(
-                        $("<i>",{class: data.users[i].status})).append(data.users[i].name));
-                    toElement += '<li><a name="toTarget" href='+data.users[i]._id+'>'+data.users[i].name+'</a></li>';
+                if (data.status) {
+                    
+                    $('#roomUserList').children().remove();
+                    var length = data.users.length;
+                    var toElement = '';
+                    for (var i = 0; i < length; i++) {
+                        $('#roomUserList').append($("<li>",{name: data.users[i]._id}).append(
+                            $("<i>",{class: data.users[i].status})).append(data.users[i].name));
+                        toElement += '<li><a name="toTarget" href='+data.users[i]._id+'>'+data.users[i].name+'</a></li>';
+                    }
+                    document.getElementById("toUl").innerHTML = toElement;
+    
+                    $('#roomInfomation').html(data.description);
+                    if (!msgAdd)return;
+                    data.messages.forEach(function(message){
+                        message.roomId = id;
+                        createMessageElement(id, message);
+                    });
+                    $('#'+id).animate({ scrollTop: getScrolBottom($('#'+id))}, 'slow');
+                } else {
+                    errorMessage(data.message);
                 }
-                document.getElementById("toUl").innerHTML = toElement;
-
-                $('#roomInfomation').html(data.description);
-                if (!msgAdd)return;
-                data.messages.forEach(function(message){
-                    message.roomId = id;
-                    createMessageElement(id, message);
-                });
-                $('#'+id).animate({ scrollTop: getScrolBottom($('#'+id))}, 'slow');
         　　},
         　　error: function(XMLHttpRequest, textStatus, errorThrown) {
                 errorMessage();
@@ -274,7 +291,7 @@ $(function() {
     $('#sendButton').click(function() {
         
         if($('#message').val().trim().length===0)return;
-        var target = $('#roomContents').find(".active").attr("id");
+        var target = $('#sendButton').val();
         var toTarget = $('input[name=toList]:hidden').get();
         var toNum = toTarget.length; 
         var toList = [];
@@ -331,8 +348,9 @@ $(function() {
         });
         if (users.length === 0) return false;
         var roomId = $('#memberEditButton').val();
-        var editMember = {roomId:roomId, users:users};
-        socket.emit('member edit', editMember);
+        var name = $('#editRoomName').val();
+        var edit = {roomId:roomId, name:name, users:users};
+        socket.emit('member edit', edit);
     });
     socket.on('member add', function (data) {
         socket.emit('join room', data.roomId);
@@ -348,9 +366,14 @@ $(function() {
         $('li[name='+data.roomId+']').remove();
     });
     socket.on('member edit complete', function (data) {
-        if (data.roomId == $('#roomContents').find(".active").attr("id")) {
-            
+        if (data.roomId == $('#sendButton').val()) {
             createMemberList(data.users);
+            $('#roomName').html(data.roomName);
+        }
+        if (data.isRoomNameEdit) {
+            $('li[name='+data.roomId+']').children('a').text(data.roomName);
+            successMessage('['+data.deforeName+']<br>'+'から'+'['+data.roomName+']<br>'+'に部屋名が変更されました');
+            
         }
         if($('li[name='+data.roomId+']').text() !== '') {
             successMessage('['+data.roomName+']<br>'+'のメンバーが変更されました');

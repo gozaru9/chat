@@ -217,17 +217,18 @@ chatModel.prototype.addMyMessage = function(data) {
     });
 };
 /**
- * 部屋に入れるユーザーの変更を行う.
+ * 部屋名、入れるユーザーの変更を行う.
  * 
  * @author niikawa
- * @method memberUpdate
+ * @method roomUpdate
  * @param {Object} data
  * @param {Function} callback
  */
-chatModel.prototype.memberUpdate = function(data, callback) {
+chatModel.prototype.roomUpdate = function(data, callback) {
 
     var Chat = this.db.model(collection);
     Chat.findOne({ "_id" : data.roomId}, function(err, room){
+        room.name = data.name;
         room.users = data.users;
         room.save();
         callback(err, '');

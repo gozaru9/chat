@@ -352,10 +352,57 @@ exports.getMyRoomList = function(req, res) {
     });
 };
 /**
- * リクエストを受け取り、ユーザーの入れる部屋を取得する(ajax版)
+ * リクエストを受け取り編集対象の部屋情報を取得する(ajax版)
  * 
  * @author niikawa
- * @method getMyRoom
+ * @method getRoomEditInfo
+ * @param {Object} req 画面からのリクエスト
+ * @param {Object} res 画面へのレスポンス
+ */
+exports.getRoomEditInfo = function(req, res) {
+    logger.appDebug('chat.getRoomEditInfo start');
+    if (req.body.roomId && req.body.roomId !== 'myRoom') {
+        chat.roomInCheck(req.session._id, req.body.roomId, function(err, isRoomIn) {
+            
+            if (isRoomIn) {
+                
+                async.parallel(
+                    [function (callback) {
+                        chat.getById(req.body.roomId, callback);
+                    },function (callback) {
+                        model.getAllSync(callback);
+                    }]
+                    ,function(err, results) {
+                        var executeStatus = true;
+                        if (err) {
+                            logger.appError('chat.getRoomEditInfo : データ取得に失敗:'+req.body.roomId);
+                            logger.appError(err);
+                            executeStatus = false;
+                        }
+                        var room = results[0];
+                        var allUsers = results[1];
+                        if (!room) {
+                            logger.appWarn('chat.getRoomEditInfo : 対象の部屋が存在しない:'+req.body.roomId);
+                            res.send({status:false, message:'編集対象の部屋が存在しません'});
+                        } else {
+                            res.send({status:executeStatus, name:room.name ,users:room.users, allUsers:allUsers});
+                        }
+                    });
+            } else {
+                
+                res.send({status:false, message:'編集対象の部屋のメンバーではありません。'});
+            }
+        });
+        
+    }else{
+        res.send({status:false, message:'パラメータが不正です'});
+    }
+};
+/**
+ * リクエストを受け取り部屋を取得する(ajax版)
+ * 
+ * @author niikawa
+ * @method getUserByRoomId
  * @param {Object} req 画面からのリクエスト
  * @param {Object} res 画面へのレスポンス
  */
@@ -363,8 +410,9 @@ exports.getUserByRoomId = function(req, res) {
     
     logger.appDebug('chat.getUserByRoomId start');
     if (req.body.roomId) {
+        
         var isMyRoom = req.body.roomId === 'myRoom';
-        async.series(
+        async.parallel(
             [function (callback) {
                 if (isMyRoom) {
                     
@@ -375,12 +423,25 @@ exports.getUserByRoomId = function(req, res) {
                 }
             },function (callback) {
                 model.getAllSync(callback);
+            }, function (callback) {
+                if (!isMyRoom) {
+                    chat.roomInCheck(req.session._id, req.body.roomId, callback);
+                } else {
+                    callback();
+                }
             }]
             ,function(err, results) {
                 
                 if (err) {
                     logger.appError('chat.getUserByRoomId : データ取得に失敗:'+req.body.roomId);
                     logger.appError(err);
+                }
+                
+                //部屋のメンバーではない場合
+                if (!isMyRoom && !results[2]) {
+                    
+                    res.send({status:false, message:'この部屋のメッセージは閲覧できません。'});
+                    return ;
                 }
                 var room = results[0];
                 var allUsers = results[1];
@@ -396,7 +457,7 @@ exports.getUserByRoomId = function(req, res) {
                     users = room.users;
                 }
                 craeteMemberStatus(users, allUsers);
-                res.send({users:users, messages:room.messages
+                res.send({status:true,users:users, messages:room.messages
                     , allUsers:allUsers,description:room.description});
             });
     
@@ -406,7 +467,7 @@ exports.getUserByRoomId = function(req, res) {
 };
 /**
  * リクエストを受け取り、部屋のメンバー構成を更新する(ajax版)
- * 
+ * ※未使用
  * @author niikawa
  * @method memberUpdate
  * @param {Object} req 画面からのリクエスト
@@ -422,7 +483,7 @@ exports.memberUpdate = function(req, res) {
                 chat.getById(req.body.roomId, callback);
             },function (callback) {
                 //メンバーの更新
-                chat.memberUpdate(req.body, callback);
+                chat.roomUpdate(req.body, callback);
             },function (callback) {
                 //画面表示用にステータスが必要なため全ユーザーの最新状態を取得
                 model.getAll(req.body, callback);
@@ -501,7 +562,7 @@ exports.memberUpdateBySocket = function(data, callback) {
                 chat.getById(data.roomId, callback);
             },function (callback) {
                 //メンバーの更新
-                chat.memberUpdate(data, callback);
+                chat.roomUpdate(data, callback);
             },function (callback) {
                 //画面表示用にステータスが必要なため全ユーザーの最新状態を取得
                 model.getAll(data, callback);

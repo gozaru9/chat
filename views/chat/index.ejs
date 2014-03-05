@@ -12,7 +12,13 @@
             if (target !== 'undefined'){
                 var socket = io.connect(location.hostname);
                 $('#sendButton').val(target);
-
+                if (target === 'myRoom') {
+                    $('#sendButton').attr("disabled", "disabled");
+                    $('#memberEditButton').attr("disabled", "disabled");
+                } else {
+                    $('#sendButton').removeAttr("disabled");
+                    $('#memberEditButton').removeAttr("disabled");
+                }
                 <% rooms.forEach(function(room){ %>
                     joinRoom("<%= room._id %>");
                 <% }) %>
