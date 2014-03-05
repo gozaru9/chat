@@ -13,7 +13,7 @@ var updateActiveRoomUnRead = function() {
     window.document.title = $('#roomName').text();
 };
 var memberEditCompleteButtonCheck = function (){
-    if ( $('#selectedEditMember option' ).length !== 0 ) {
+    if ( $('#selectedEditMember option' ).length !== 0 && $('#editRoomName').val().trim().length !== 0) {
         $('#memberEditCompleteButton').removeAttr("disabled");
     } else {
         $('#memberEditCompleteButton').attr("disabled", "disabled");
@@ -333,6 +333,9 @@ $(function() {
         updateUnReadNumAndScrolBottom(data);
     });
     /* room member edit **/
+    $('#memberEditForm').focusout(function() {
+        memberEditCompleteButtonCheck();
+    });
     $('#selectEditMember').change(function(event){
         selectMove('selectEditMember', 'selectedEditMember', false);
         memberEditCompleteButtonCheck();
@@ -342,11 +345,19 @@ $(function() {
         memberEditCompleteButtonCheck();
     });
     $('#memberEditCompleteButton').click(function(){
+        
+        if ($('#editRoomName').val().trim().length === 0) {
+            errorMessage('部屋名を入力してください', 'top-center');
+            return false
+        }
         var users = [];
         $("select[name=selectedEditMember]").children().each(function() {
             users.push({_id:$(this).val(), name:$(this).text()});
         });
-        if (users.length === 0) return false;
+        if (users.length === 0) {
+            errorMessage('メンバーを選択してください', 'top-center');
+            return false;
+        }
         var roomId = $('#memberEditButton').val();
         var name = $('#editRoomName').val();
         var edit = {roomId:roomId, name:name, users:users};
